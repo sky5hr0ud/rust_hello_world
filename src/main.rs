@@ -1,8 +1,62 @@
+use std::fmt::Debug;
 use std::io;
 use std::io::Write;
 use std::fs;
 use std::env;
+use std::mem;
+use std::ops::Add;
 use rand::prelude::*;
+
+#[derive(Debug)]
+struct Cuboid {
+    length: f64,
+    width: f64,
+    height: f64
+}
+
+impl Cuboid {
+    fn new(length: f64, width: f64, height: f64) -> Cuboid {
+        Cuboid {
+            length: length,
+            width: width,
+            height: height
+        }
+    }
+    fn get_length(&self) -> f64 {
+        return self.length
+    }
+    fn set_length(&mut self, new_length: f64) {
+        self.length = new_length
+    }
+    fn get_width(&self) -> f64 {
+        return self.width
+    }
+    fn set_width(&mut self, new_width: f64) {
+        self.width = new_width
+    }
+    fn get_height(&self) -> f64 {
+        return self.height
+    }
+    fn set_height(&mut self, new_height: f64) {
+        self.height = new_height
+    }
+    fn get_xyz(&self) -> (f64, f64, f64) {
+        return (self.get_length(), self.get_width(), self.get_height())
+    }
+    fn surface_area(&self) -> f64 {
+        return 2.0 * (self.get_length() * self.get_width() + 
+                      self.get_length() * self.get_height() +
+                      self.get_height() * self.get_width())
+    }
+    fn volume(&self) -> f64 {
+        return self.get_length() * self.get_width() * self.get_height()
+    }
+    fn scale(&mut self, scale_factor: f64) {
+        self.set_length(self.get_length() * scale_factor);
+        self.set_width(self.get_width() * scale_factor);
+        self.set_height(self.get_height() * scale_factor);
+    }
+}
 
 fn main() {
     println!("Hello, world!");
@@ -14,8 +68,8 @@ fn main() {
     assert_eq!(str_test(char_to_remove), true);
     println!("String Tests Passed!");
 
-    assert_eq!(random_game(), true);
-    println!("Random Game Passed!"); 
+    //assert_eq!(random_game(), true);
+    //println!("Random Game Passed!"); 
 
     if env::args().len() <= 2 {
         println!("Need 2 arguments! <file path> <name>");
@@ -25,6 +79,14 @@ fn main() {
     let person: String = env::args().nth(2).unwrap();
     assert_eq!(roster_test(&filename, &person), true);
     println!("Roster Test Passed!");
+
+    assert_eq!(shape_test(1.0, 2.0, 3.0), true);
+    println!("Shape Test Passed!");
+
+    assert_eq!(*sum_boxes(1, 2), 3);
+    assert_eq!(*sum_boxes(3.14159, 2.71828), 5.85987);
+    println!("Boxes Test Passed!");
+
 }
 
 fn numbers_test(numbers: &[i32]) -> bool {
@@ -187,4 +249,23 @@ fn roster_test(filename: &str, person: &str) -> bool {
         println!("{} is now in {}!", person, filename);
     };
     return true
+}
+
+fn shape_test(length: f64, width: f64, height: f64) -> bool {
+    let mut cuboid1: Box<Cuboid> = Box::new(Cuboid::new(length, width, height));
+    println!("Cuboid has dimensions: {:?}, surface area: {:?}, volume: {:?}", 
+        cuboid1.get_xyz(), cuboid1.surface_area(), cuboid1.volume());
+    cuboid1.scale(100.0);
+    println!("Cuboid has dimensions: {:?}, surface area: {:?}, volume: {:?}", 
+        cuboid1.get_xyz(), cuboid1.surface_area(), cuboid1.volume());
+    println!("{:?}", mem::size_of_val(&cuboid1));
+    println!("{:?}", mem::size_of_val(&*cuboid1));
+    return true
+}
+
+fn sum_boxes<T: std::ops::Add + Add<Output = T> + std::fmt::Debug>(num1: T, num2: T) -> Box<T> {
+    let number1 = Box::new(num1);
+    let number2 = Box::new(num2);
+    let number3 = Box::new(*number1 + *number2);
+    return number3
 }
