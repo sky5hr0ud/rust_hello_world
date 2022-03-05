@@ -5,6 +5,7 @@ use std::fs;
 use std::env;
 use std::mem;
 use std::ops::Add;
+use std::fmt;
 use rand::prelude::*;
 
 #[derive(Debug)]
@@ -58,6 +59,41 @@ impl Cuboid {
     }
 }
 
+struct Satellite<T> {
+    name: String,
+    velocity: T // miles per second
+}
+
+trait Description {
+    fn describe(&self) -> String;
+}
+
+impl<T: std::fmt::Display> Description for Satellite<T> {
+    fn describe(&self) -> String {
+        format!("{} moving at {} miles per second!", self.name, self.velocity)
+    }
+}
+
+impl<T> Satellite<T>
+    where T: std::cmp::PartialOrd + std::fmt::Display {    
+    fn compare(&self, satellite2: Satellite<T>) {
+        if self.velocity > satellite2.velocity {
+            println!("{}", &self.describe());
+        } else if self.velocity < satellite2.velocity {
+            println!("{}", &satellite2.describe());
+        } else {
+            println!("{} == {}", &self.describe(), &satellite2.describe());
+        }
+    }
+    fn new(name: String, initial_velocity: T) ->
+    Satellite<T> {
+        Satellite {
+            name: name,
+            velocity: initial_velocity
+        }
+    }
+}
+
 fn main() {
     println!("Hello, world!");
     let numbers = [1, 9, -2, 0, 23, 20, -7, 13, 37, 20, 56, -18, 20, 3];
@@ -86,6 +122,13 @@ fn main() {
     assert_eq!(*sum_boxes(1, 2), 3);
     assert_eq!(*sum_boxes(3.14159, 2.71828), 5.85987);
     println!("Boxes Test Passed!");
+
+    assert_eq!(satellite_test(String::from("Hubble Telescope"), 2),
+               "Hubble Telescope moving at 2 miles per second!");
+    assert_eq!(satellite_test(String::from("Voyager"), -5000000.231423),
+               "Voyager moving at -5000000.231423 miles per second!");
+    satellite_test("Super Secret Spy Satellite".to_string(), "negative five");
+    println!("Satellite Tests Passed!");
 
 }
 
@@ -147,7 +190,7 @@ fn str_test(remove: &str) -> bool {
     return true
 }
 
-fn trim_char<'a>(str: &'a str, str_to_remove: &'a str) -> &'a str {
+fn trim_char<'a, 'b>(str: &'a str, str_to_remove: &'b str) -> &'a str {
     let blank_string = "";
     let str_bytes = str.as_bytes();
     let str_to_remove_bytes = str_to_remove.as_bytes();
@@ -268,4 +311,35 @@ fn sum_boxes<T: std::ops::Add + Add<Output = T> + std::fmt::Debug>(num1: T, num2
     let number2 = Box::new(num2);
     let number3 = Box::new(*number1 + *number2);
     return number3
+}
+
+fn satellite_test<T>(name: String, initial_velocity: T) -> String
+    where T: fmt::Display + PartialOrd {
+    let satellite1 = Satellite::new(name, initial_velocity);
+    println!("{}", satellite1.describe());
+    satellite_test2();
+    return satellite1.describe();
+}
+
+fn satellite_test2() -> bool {
+    let satellite1 = Satellite::new("Hubble2".to_string(), 1000.0);
+    let satellite2 = Satellite::new("James Web".to_string(), 500.0);
+    satellite1.compare(satellite2);
+    let satellite1 = Satellite::new("Hubble2".to_string(), 1000.0);
+    let satellite2 = Satellite::new("James Web".to_string(), 5000);
+    compare_satellite(satellite1, satellite2);
+    return true
+}
+
+// how do you put this in an impl?
+fn compare_satellite<T,U>(satellite1: Satellite<T>, satellite2: Satellite<U>)
+    where T: std::cmp::PartialOrd + std::fmt::Display + From<U>,
+          U: std::cmp::PartialOrd + std::fmt::Display + Copy {
+    if &satellite1.velocity > &T::from(satellite2.velocity) {
+        println!("{}", &satellite1.describe());
+    } else if &satellite1.velocity < &T::from(satellite2.velocity) {
+        println!("{}", &satellite2.describe());
+    } else {
+        println!("{} == {}", &satellite1.describe(), &satellite2.describe());
+    }
 }
