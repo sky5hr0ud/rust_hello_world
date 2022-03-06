@@ -8,92 +8,7 @@ use std::ops::Add;
 use std::fmt;
 use rand::prelude::*;
 
-#[derive(Debug)]
-struct Cuboid {
-    length: f64,
-    width: f64,
-    height: f64
-}
-
-impl Cuboid {
-    fn new(length: f64, width: f64, height: f64) -> Cuboid {
-        Cuboid {
-            length: length,
-            width: width,
-            height: height
-        }
-    }
-    fn get_length(&self) -> f64 {
-        return self.length
-    }
-    fn set_length(&mut self, new_length: f64) {
-        self.length = new_length
-    }
-    fn get_width(&self) -> f64 {
-        return self.width
-    }
-    fn set_width(&mut self, new_width: f64) {
-        self.width = new_width
-    }
-    fn get_height(&self) -> f64 {
-        return self.height
-    }
-    fn set_height(&mut self, new_height: f64) {
-        self.height = new_height
-    }
-    fn get_xyz(&self) -> (f64, f64, f64) {
-        return (self.get_length(), self.get_width(), self.get_height())
-    }
-    fn surface_area(&self) -> f64 {
-        return 2.0 * (self.get_length() * self.get_width() + 
-                      self.get_length() * self.get_height() +
-                      self.get_height() * self.get_width())
-    }
-    fn volume(&self) -> f64 {
-        return self.get_length() * self.get_width() * self.get_height()
-    }
-    fn scale(&mut self, scale_factor: f64) {
-        self.set_length(self.get_length() * scale_factor);
-        self.set_width(self.get_width() * scale_factor);
-        self.set_height(self.get_height() * scale_factor);
-    }
-}
-
-struct Satellite<T> {
-    name: String,
-    velocity: T // miles per second
-}
-
-trait Description {
-    fn describe(&self) -> String;
-}
-
-impl<T: std::fmt::Display> Description for Satellite<T> {
-    fn describe(&self) -> String {
-        format!("{} moving at {} miles per second!", self.name, self.velocity)
-    }
-}
-
-impl<T> Satellite<T>
-    where T: std::cmp::PartialOrd + std::fmt::Display {    
-    fn compare(&self, satellite2: Satellite<T>) {
-        if self.velocity > satellite2.velocity {
-            println!("{}", &self.describe());
-        } else if self.velocity < satellite2.velocity {
-            println!("{}", &satellite2.describe());
-        } else {
-            println!("{} == {}", &self.describe(), &satellite2.describe());
-        }
-    }
-    fn new(name: String, initial_velocity: T) ->
-    Satellite<T> {
-        Satellite {
-            name: name,
-            velocity: initial_velocity
-        }
-    }
-}
-
+// Need to provide two args when ran <filepath> <name>
 fn main() {
     println!("Hello, world!");
     let numbers = [1, 9, -2, 0, 23, 20, -7, 13, 37, 20, 56, -18, 20, 3];
@@ -104,8 +19,8 @@ fn main() {
     assert_eq!(str_test(char_to_remove), true);
     println!("String Tests Passed!");
 
-    //assert_eq!(random_game(), true);
-    //println!("Random Game Passed!"); 
+    assert_eq!(random_game(), true);
+    println!("Random Game Passed!"); 
 
     if env::args().len() <= 2 {
         println!("Need 2 arguments! <file path> <name>");
@@ -129,6 +44,9 @@ fn main() {
                "Voyager moving at -5000000.231423 miles per second!");
     satellite_test("Super Secret Spy Satellite".to_string(), "negative five");
     println!("Satellite Tests Passed!");
+
+    assert_eq!(address(), true);
+    println!("Address Test Passed!");
 
 }
 
@@ -248,10 +166,7 @@ fn random_game() -> bool {
         let mut number_of_guesses = 0;
         let max_guesses = 5;
         while correct_guess == false && number_of_guesses < max_guesses {
-            let mut buffer = String::new();
-            println!("Enter a number between 0 and 100");
-            io::stdin().read_line(&mut buffer).expect("Could not read input!");
-            let guess: u32 = buffer.trim().parse().expect("Did not input a number between 0 and 100!");
+            let guess = user_number_input(0, 100);
             number_of_guesses += 1;
             if guess == number {
                 println!("You correctly guessed: {} in {} trys!", number, number_of_guesses);
@@ -266,13 +181,69 @@ fn random_game() -> bool {
             println!("You did not guess the number after {} trys!", number_of_guesses);
         }
         println!("Do you want to play again? (y or n)");
-        let mut buffer = String::new();
-        io::stdin().read_line(&mut buffer).expect("Could not read input!");
-        if buffer != "y\n" {
+        let next_game = user_input();
+        let mut play_next = false;
+        let valid_next_games = ["y\n", "yes\n", "Y\n", "YES\n"];
+        for valid in valid_next_games {
+            if next_game == valid {
+                play_next = true;
+            }
+        }
+        if play_next == false {
             break;
         }
     }
     return true
+}
+
+fn user_number_input(lower_limit: u32, upper_limit: u32) -> u32 {
+    let mut loop_counter = 0;
+    let max_loops = 100;
+    loop {
+        println!("Enter a number between {} and {}", lower_limit, upper_limit);
+        let parse_message = user_input().trim().parse::<u32>();
+        let parsed_message_success = match parse_message {
+            Ok(number) => (true, number),
+            Err(_) => (false, 0)
+            };
+        if parsed_message_success.0 {
+            if parsed_message_success.1 > lower_limit &&
+               parsed_message_success.1 < upper_limit {
+                return parsed_message_success.1
+               } else {
+                loop_counter += 1;
+                println!("Input not between bounds of {} and {}", lower_limit, upper_limit);
+               }
+        } else {
+            loop_counter += 1;
+            println!("Input not an integer between bounds of {} and {}", lower_limit, upper_limit);
+        }
+        if loop_counter >= max_loops {
+            panic!("Error: Incorrect input supplied too many times!");
+        }
+    }
+}
+
+fn user_input() -> String {
+    let mut loop_counter = 0;
+    let max_loops = 100;
+    loop {
+        let mut buffer = String::new();
+        let input = io::stdin().read_line(&mut buffer);
+        let user_output = match input {
+            Ok(_) => (true, String::from(buffer)),
+            Err(_) => (false, String::from("Input error! Please try again!"))
+        };
+        if user_output.0 {
+            return user_output.1
+        } else {
+            loop_counter += 1;
+            println!("{}", user_output.1);
+        }
+        if loop_counter >= max_loops {
+            panic!("Error: Incorrect input supplied too many times!");
+        }
+    }
 }
 
 fn roster_test(filename: &str, person: &str) -> bool {
@@ -294,6 +265,57 @@ fn roster_test(filename: &str, person: &str) -> bool {
     return true
 }
 
+#[derive(Debug)]
+struct Cuboid {
+    length: f64,
+    width: f64,
+    height: f64
+}
+
+impl Cuboid {
+    fn new(length: f64, width: f64, height: f64) -> Cuboid {
+        Cuboid {
+            length: length,
+            width: width,
+            height: height
+        }
+    }
+    fn get_length(&self) -> f64 {
+        return self.length
+    }
+    fn set_length(&mut self, new_length: f64) {
+        self.length = new_length
+    }
+    fn get_width(&self) -> f64 {
+        return self.width
+    }
+    fn set_width(&mut self, new_width: f64) {
+        self.width = new_width
+    }
+    fn get_height(&self) -> f64 {
+        return self.height
+    }
+    fn set_height(&mut self, new_height: f64) {
+        self.height = new_height
+    }
+    fn get_xyz(&self) -> (f64, f64, f64) {
+        return (self.get_length(), self.get_width(), self.get_height())
+    }
+    fn surface_area(&self) -> f64 {
+        return 2.0 * (self.get_length() * self.get_width() + 
+                      self.get_length() * self.get_height() +
+                      self.get_height() * self.get_width())
+    }
+    fn volume(&self) -> f64 {
+        return self.get_length() * self.get_width() * self.get_height()
+    }
+    fn scale(&mut self, scale_factor: f64) {
+        self.set_length(self.get_length() * scale_factor);
+        self.set_width(self.get_width() * scale_factor);
+        self.set_height(self.get_height() * scale_factor);
+    }
+}
+
 fn shape_test(length: f64, width: f64, height: f64) -> bool {
     let mut cuboid1: Box<Cuboid> = Box::new(Cuboid::new(length, width, height));
     println!("Cuboid has dimensions: {:?}, surface area: {:?}, volume: {:?}", 
@@ -301,8 +323,8 @@ fn shape_test(length: f64, width: f64, height: f64) -> bool {
     cuboid1.scale(100.0);
     println!("Cuboid has dimensions: {:?}, surface area: {:?}, volume: {:?}", 
         cuboid1.get_xyz(), cuboid1.surface_area(), cuboid1.volume());
-    println!("{:?}", mem::size_of_val(&cuboid1));
-    println!("{:?}", mem::size_of_val(&*cuboid1));
+    println!("Memory size of Cuboid pointer: {:?} bytes!", mem::size_of_val(&cuboid1));
+    println!("Memory size of Cuboid: {:?} bytes!", mem::size_of_val(&*cuboid1));
     return true
 }
 
@@ -311,6 +333,41 @@ fn sum_boxes<T: std::ops::Add + Add<Output = T> + std::fmt::Debug>(num1: T, num2
     let number2 = Box::new(num2);
     let number3 = Box::new(*number1 + *number2);
     return number3
+}
+
+struct Satellite<T> {
+    name: String,
+    velocity: T // miles per second
+}
+
+trait Description {
+    fn describe(&self) -> String;
+}
+
+impl<T: std::fmt::Display> Description for Satellite<T> {
+    fn describe(&self) -> String {
+        format!("{} moving at {} miles per second!", self.name, self.velocity)
+    }
+}
+
+impl<T> Satellite<T>
+    where T: std::cmp::PartialOrd + std::fmt::Display {    
+    fn compare(&self, satellite2: Satellite<T>) {
+        if self.velocity > satellite2.velocity {
+            println!("{}", &self.describe());
+        } else if self.velocity < satellite2.velocity {
+            println!("{}", &satellite2.describe());
+        } else {
+            println!("{} == {}", &self.describe(), &satellite2.describe());
+        }
+    }
+    fn new(name: String, initial_velocity: T) ->
+    Satellite<T> {
+        Satellite {
+            name: name,
+            velocity: initial_velocity
+        }
+    }
 }
 
 fn satellite_test<T>(name: String, initial_velocity: T) -> String
@@ -342,4 +399,34 @@ fn compare_satellite<T,U>(satellite1: Satellite<T>, satellite2: Satellite<U>)
     } else {
         println!("{} == {}", &satellite1.describe(), &satellite2.describe());
     }
+}
+
+enum Location {
+    Unknown,
+    Anon,
+    Known(f64, f64) // latitude, longitude
+}
+
+trait Display {
+    fn display(&self) -> String;
+}
+
+impl Display for Location {
+    fn display(&self) -> String {
+        match *self {
+            Location::Unknown => format!("Location not known \u{1F622}"),
+            Location::Anon => format!("Location request refused \u{1F620}"),
+            Location::Known(lat, lon) => format!("Address is at location {} {} \u{1F911}", lat, lon)
+        }
+    }
+}
+
+fn address() -> bool {
+    let address = Location::Unknown;
+    println!("{}", address.display());
+    let address = Location::Anon;
+    println!("{}", address.display());
+    let address = Location::Known(28.608295, -80.604177);
+    println!("{}", address.display());
+    return true
 }
