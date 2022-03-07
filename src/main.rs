@@ -7,6 +7,7 @@ use std::mem;
 use std::ops::Add;
 use std::fmt;
 use rand::prelude::*;
+use std::collections::HashMap;
 
 // Need to provide two args when ran <filepath> <name>
 fn main() {
@@ -19,11 +20,11 @@ fn main() {
     assert_eq!(str_test(char_to_remove), true);
     println!("String Tests Passed!");
 
-    assert_eq!(random_game(), true);
-    println!("Random Game Passed!"); 
+    //assert_eq!(random_game(), true);
+    //println!("Random Game Passed!"); 
 
-    if env::args().len() <= 2 {
-        println!("Need 2 arguments! <file path> <name>");
+    if env::args().len() <= 3 {
+        println!("Need 2 arguments! <file path> <name> <book_name>");
         return;
     }
     let filename: String = env::args().nth(1).unwrap();
@@ -48,6 +49,16 @@ fn main() {
     assert_eq!(address(), true);
     println!("Address Test Passed!");
 
+    let book_name: String = env::args().nth(3).unwrap();
+    for index in 1..18 {
+        println!("Searching for {} character long words!", index);
+        if book_test(&book_name, index) {
+            continue;
+        } else {
+            panic!("Error with book function!");
+        }
+    }
+    println!("Unique words in book test passed!");
 }
 
 fn numbers_test(numbers: &[i32]) -> bool {
@@ -429,4 +440,78 @@ fn address() -> bool {
     let address = Location::Known(28.608295, -80.604177);
     println!("{}", address.display());
     return true
+}
+
+fn book_test(book_name: &str, word_length: i32) -> bool {
+    let mut book_contents;
+    let mut read_book = file_reader(&book_name);
+    if read_book.0 {
+        //println!("Successfully read book!");
+        book_contents = read_book.1;
+    } else {
+        // let the user input a path to the book
+        println!("{} File: {}", read_book.1, book_name);
+        while read_book.0 == false {
+            println!("Input path to book!");
+            let input = &user_input();
+            read_book = file_reader(input.trim());
+            if read_book.0 {
+                //println!("Successfully read book!");
+            } else {
+                println!("{} File: {}", read_book.1, input.trim());
+            }
+        }
+        book_contents = read_book.1;
+    }
+    let punctuations = [".", ",", ";", ":", "'", "\"", "!"];
+    for punctuation in punctuations {
+        book_contents = book_contents.replace(punctuation, "");
+    }
+    book_contents = book_contents.to_ascii_lowercase();
+    let mut book_contents_vec: Vec<&str> = book_contents.split_whitespace().collect();
+    book_contents_vec.retain(|element| element.chars().count() == word_length.try_into().unwrap());
+    book_contents_vec.retain(|element| element.chars().all(char::is_alphabetic));
+    book_contents_vec.retain(|element| element.starts_with("www") == false);
+    let mut unique_words = HashMap::new();
+    for element in &book_contents_vec {
+        let word = unique_words.entry(element).or_insert(1);
+        *word += 1
+    }
+    let mut highest_value = 0;
+    let mut highest_value_word: Vec<(&str, i32)> = Vec::new();
+    let max_top_words = 5;
+    for element in &book_contents_vec {
+        let output =  unique_words.get_key_value(&element).expect("Not Found!");
+        if output.1 > &highest_value {
+            highest_value = *output.1;
+            if highest_value_word.len() >= max_top_words {
+                highest_value_word.clear();
+            }
+            highest_value_word.push((element, *output.1));
+        } else if output.1 == &highest_value {
+            highest_value_word.push((element, *output.1));
+            highest_value_word.sort();
+            highest_value_word.dedup();
+        }
+    }
+    println!("The top word occurs {} times!", highest_value);
+    println!("The top {} words are:", highest_value_word.len());
+    for word in highest_value_word {
+        println!("The word {} which occurs {} times.", word.0, word.1);
+    } 
+    return true
+}
+
+fn file_reader(file: &str) -> (bool, String) {
+    let file_to_be_read = file;
+    let contents = fs::read_to_string(file_to_be_read);
+    let content = match contents {
+        Ok(message) => (true, message),
+        Err(err) => match err.kind() {
+            io::ErrorKind::NotFound => (false, String::from("File not found!")),
+            io::ErrorKind::PermissionDenied => (false, String::from("No file access permissions!")),
+            _ => (false, String::from("Error accessing file!"))
+        }
+    };
+    return content
 }
