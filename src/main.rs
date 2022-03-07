@@ -20,8 +20,8 @@ fn main() {
     assert_eq!(str_test(char_to_remove), true);
     println!("String Tests Passed!");
 
-    //assert_eq!(random_game(), true);
-    //println!("Random Game Passed!"); 
+    assert_eq!(random_game(), true);
+    println!("Random Game Passed!"); 
 
     if env::args().len() <= 3 {
         println!("Need 2 arguments! <file path> <name> <book_name>");
